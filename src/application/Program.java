@@ -11,15 +11,15 @@ public class Program {
 
 	public static void main(String[] args) {
 		
-		Department depart = new Department(1, "Books");
+
+		SellerDao sellerDao = DaoFactory.createSellerDao();
 		
-		Seller seller = new Seller(1, "Bob", "bob@gmail.com", new Date(), 3000.00, depart);
-		
-		System.out.println(depart);
-		
+		Seller seller = sellerDao.findById(3);
+		System.out.println("=== TEST 1 findById Seller ===");
 		System.out.println(seller);
 		
-		SellerDao sellerDao = DaoFactory.createSellerDao();
+		
+		
 
 	}
 
