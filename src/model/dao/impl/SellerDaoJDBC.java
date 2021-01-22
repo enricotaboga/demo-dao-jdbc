@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mysql.jdbc.Statement;
+
 import db.DB;
 import db.DbException;
 import model.dao.SellerDao;
@@ -25,7 +27,40 @@ public class SellerDaoJDBC implements SellerDao{
 
 	@Override
 	public void insert(Seller seller) {
-		// TODO Auto-generated method stub
+		PreparedStatement st = null;
+		
+		try {
+			st = conn.prepareStatement
+					("INSERT INTO seller " + 
+					"(Name, Email, BirthDate, BaseSalary, DepartmentId) " + 
+					"VALUES " + 
+					"(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+			
+			st.setString(1, seller.getName());
+			st.setString(2, seller.getEmail());
+			st.setDate(3, new java.sql.Date(seller.getBirthday().getTime()));
+			st.setDouble(4, seller.getBaseSalary());
+			st.setInt(5, seller.getDepartment().getId());
+			
+			Integer affectedRows = st.executeUpdate();
+			
+			if (affectedRows > 0) {
+				ResultSet rs = st.getGeneratedKeys();
+				if (rs.next()) {
+					seller.setId(rs.getInt(1));
+				}	
+				DB.closeResultSet(rs);
+			}
+			else {
+				throw new DbException("Unexpeted error! No rows affected!");	
+			}
+		}
+		catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		}
+		finally {
+			DB.closeStatement(st);
+		}
 		
 	}
 
@@ -100,17 +135,12 @@ public class SellerDaoJDBC implements SellerDao{
 		ResultSet rs = null;
 		List<Seller> listSeller = new ArrayList<Seller>();
 		Map<Integer, Department> map = new HashMap<>();
-		
 		try {
 		st = conn.prepareStatement("SELECT seller.*,department.Name as DepName "
 				+ "FROM seller INNER JOIN department "
 				+ "ON seller.DepartmentId = department.Id");
 		
 		rs = st.executeQuery();
-		
-		
-		
-		
 		while (rs.next()) {
 			Department depart = map.get(rs.getInt("DepartmentId"));
 			
@@ -118,14 +148,10 @@ public class SellerDaoJDBC implements SellerDao{
 				depart = instanciateDepartment(rs);
 				map.put(depart.getId(), depart);
 			}
-			
-			
 			Seller seller = instanciateSeller(rs, depart);
 			listSeller.add(seller);
 		}	
 		return listSeller;
-		
-		
 		}	
 		catch (SQLException e) {
 			throw new DbException(e.getMessage());
